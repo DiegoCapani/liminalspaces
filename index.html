@@ -4,25 +4,36 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Liminal System</title>
+<title>Backrooms Perception</title>
 
 <style>
-body {
+html, body {
 margin: 0;
+padding: 0;
+width: 100%;
+height: 100%;
 overflow: hidden;
 background: black;
 }
 
+/* CAMERA */
 video {
 position: fixed;
 width: 100%;
 height: 100%;
 object-fit: cover;
-filter: contrast(1.1) brightness(0.95) saturate(0.75);
+
+/* 🎨 TINTA BACKROOMS */
+filter: 
+sepia(0.35)
+saturate(1.6)
+contrast(1.15)
+brightness(0.95)
+hue-rotate(25deg);
 }
 
-/* VHS base */
-#scanlines {
+/* VHS SCANLINES */
+.scanlines {
 position: fixed;
 width: 100%;
 height: 100%;
@@ -36,24 +47,25 @@ transparent 2px,
 transparent 4px
 );
 
-opacity: 0.35;
 mix-blend-mode: overlay;
+opacity: 0.35;
 }
 
 /* NOISE */
-#noise {
+.noise {
 position: fixed;
 width: 100%;
 height: 100%;
 pointer-events: none;
+
 background: url("https://upload.wikimedia.org/wikipedia/commons/5/5c/Image_gaussian_noise_example.png");
 background-size: cover;
-opacity: 0.05;
 mix-blend-mode: overlay;
+opacity: 0.06;
 }
 
 /* VIGNETTE */
-#vignette {
+.vignette {
 position: fixed;
 width: 100%;
 height: 100%;
@@ -61,9 +73,28 @@ pointer-events: none;
 
 background: radial-gradient(
 circle,
-rgba(0,0,0,0) 45%,
+rgba(0,0,0,0) 40%,
 rgba(0,0,0,0.85)
 );
+}
+
+/* LIGHT FLICKER SIMULATO */
+.flicker {
+position: fixed;
+width: 100%;
+height: 100%;
+pointer-events: none;
+background: rgba(255, 244, 180, 0.04);
+mix-blend-mode: screen;
+animation: flickerAnim 3s infinite;
+}
+
+@keyframes flickerAnim {
+0% { opacity: 0.2; }
+5% { opacity: 0.05; }
+10% { opacity: 0.25; }
+50% { opacity: 0.15; }
+100% { opacity: 0.2; }
 }
 
 /* START */
@@ -79,8 +110,11 @@ z-index: 10;
 }
 
 button {
-padding: 20px;
+padding: 20px 30px;
 font-size: 18px;
+border: none;
+background: white;
+cursor: pointer;
 }
 </style>
 </head>
@@ -93,9 +127,10 @@ font-size: 18px;
 
 <video id="video" playsinline autoplay muted></video>
 
-<div id="scanlines"></div>
-<div id="noise"></div>
-<div id="vignette"></div>
+<div class="scanlines"></div>
+<div class="noise"></div>
+<div class="vignette"></div>
+<div class="flicker"></div>
 
 <audio id="audio" loop>
 <source src="assets/audio/liminal1.mp3" type="audio/mpeg">
@@ -104,20 +139,28 @@ font-size: 18px;
 <script>
 
 const video = document.getElementById("video");
-const audio = document.getElementById("audio");
 const btn = document.getElementById("btn");
 const start = document.getElementById("start");
+const audio = document.getElementById("audio");
 
-/* stato instabilità */
-let instability = 0;
+/* FULLSCREEN */
+async function goFullscreen() {
+const el = document.documentElement;
+
+if (el.requestFullscreen) await el.requestFullscreen();
+else if (el.webkitRequestFullscreen) await el.webkitRequestFullscreen();
+else if (el.msRequestFullscreen) await el.msRequestFullscreen();
+}
 
 btn.onclick = async () => {
+
+await goFullscreen();
 
 start.style.display = "none";
 
 /* CAMERA */
 const stream = await navigator.mediaDevices.getUserMedia({
-video: { facingMode: "environment" }
+video: { facingMode: { ideal: "environment" } }
 });
 
 video.srcObject = stream;
@@ -125,61 +168,49 @@ await video.play();
 
 /* AUDIO */
 audio.load();
-audio.play();
+audio.play().catch(e => console.log("audio bloccato", e));
 
 /* =========================
-   SISTEMA PERCETTIVO
+   LIMINAL SYSTEM BACKROOMS
    ========================= */
 
 setInterval(() => {
 
-// instabilità cresce nel tempo
-instability += 0.002;
+/* micro instabilità colore */
+const hue = 25 + Math.sin(Date.now() * 0.0003) * 3;
 
-// movimento impercettibile ma cumulativo
-const dx = (Math.random() - 0.5) * instability * 5;
-const dy = (Math.random() - 0.5) * instability * 5;
-
-video.style.transform =
-`translate(${dx}px, ${dy}px) scale(1.02)`;
-
-// il mondo “perde fedeltà”
-video.style.filter =
-`contrast(${1.1 + instability})
- brightness(${0.95 - instability * 0.2})
- saturate(${0.75 - instability * 0.3})`;
+video.style.filter = `
+sepia(0.35)
+saturate(1.6)
+contrast(${1.1 + Math.random() * 0.05})
+brightness(${0.92 + Math.random() * 0.05})
+hue-rotate(${hue}deg)
+`;
 
 }, 120);
 
-/* =========================
-   EVENTI RARI (CHIAVE PSICOLOGICA)
-   ========================= */
-
+/* EVENTI RARI */
 setInterval(() => {
 
-if (Math.random() > 0.92) {
+if (Math.random() > 0.9) {
 
-// glitch breve “impossibile”
-video.style.filter = "invert(1) contrast(1.5)";
+video.style.filter = "brightness(1.4) contrast(0.8) sepia(0.5)";
 
 setTimeout(() => {
 video.style.filter = "";
-}, 120);
+}, 150);
 
 }
 
-}, 1800);
+}, 2500);
 
-/* =========================
-   AUDIO CHE “CAMBIA STANZA”
-   ========================= */
-
+/* AUDIO INSTABILE */
 setInterval(() => {
 
-audio.volume = 0.15 + Math.random() * 0.25;
-audio.playbackRate = 0.85 + Math.random() * 0.25;
+audio.volume = 0.15 + Math.random() * 0.2;
+audio.playbackRate = 0.9 + Math.random() * 0.15;
 
-}, 3000);
+}, 4000);
 
 };
 

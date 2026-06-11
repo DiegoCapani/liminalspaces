@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Liminal Stable Camera</title>
+<title>Liminal Perception</title>
 
 <style>
 body {
@@ -16,48 +16,38 @@ overflow: hidden;
 /* CAMERA STABILE */
 video {
 position: fixed;
-top: 0;
-left: 0;
 width: 100%;
 height: 100%;
 object-fit: cover;
-
-/* IMPORTANTE: evita glitch GPU */
-transform: none;
-filter: none;
-
-background: black;
 }
 
-/* leggero filtro separato (NON sul video) */
-#fx {
+/* DISTORSIONE SOLO AI BORDI */
+#vignette {
 position: fixed;
-top: 0;
-left: 0;
 width: 100%;
 height: 100%;
 pointer-events: none;
 
-background: rgba(255,255,240,0.04);
+background: radial-gradient(
+circle,
+rgba(0,0,0,0) 45%,
+rgba(0,0,0,0.75) 100%
+);
+}
+
+/* NEBBIA PSICOLOGICA */
+#fog {
+position: fixed;
+width: 100%;
+height: 100%;
+pointer-events: none;
+background: rgba(255,255,240,0.03);
 mix-blend-mode: overlay;
 }
 
-/* vignetta */
-#vignette {
-position: fixed;
-top: 0;
-left: 0;
-width: 100%;
-height: 100%;
-pointer-events: none;
-
-background: radial-gradient(circle, transparent 40%, rgba(0,0,0,0.75));
-}
-
+/* START */
 #start {
 position: fixed;
-top: 0;
-left: 0;
 width: 100%;
 height: 100%;
 display: flex;
@@ -68,10 +58,8 @@ z-index: 10;
 }
 
 button {
-padding: 20px 30px;
+padding: 20px;
 font-size: 18px;
-border: none;
-background: white;
 }
 </style>
 </head>
@@ -84,7 +72,7 @@ background: white;
 
 <video id="video" playsinline autoplay muted></video>
 
-<div id="fx"></div>
+<div id="fog"></div>
 <div id="vignette"></div>
 
 <audio id="audio" loop>
@@ -94,53 +82,67 @@ background: white;
 <script>
 
 const video = document.getElementById("video");
+const audio = document.getElementById("audio");
 const btn = document.getElementById("btn");
 const start = document.getElementById("start");
-const audio = document.getElementById("audio");
 
-let streamRef = null;
-
+/* CAMERA */
 btn.onclick = async () => {
-
-try {
 
 start.style.display = "none";
 
-// CAMERA
-streamRef = await navigator.mediaDevices.getUserMedia({
-video: {
-facingMode: { ideal: "environment" }
-},
-audio: false
+const stream = await navigator.mediaDevices.getUserMedia({
+video: { facingMode: "environment" }
 });
 
-// IMPORTANTISSIMO: attach stream PRIMA
-video.srcObject = streamRef;
-
-// forza stabilità playback
+video.srcObject = stream;
 await video.play();
 
-// lock stream (trucco anti-black screen)
+/* AUDIO FIX */
+audio.load();
+audio.currentTime = 0;
+
+audio.play().catch(e => {
+console.log("audio bloccato", e);
+});
+
+/* =========================
+   PERCEZIONE INSTABILE
+   ========================= */
+
+let intensity = 1;
+
 setInterval(() => {
-if (video.paused) {
-video.play();
-}
-}, 1000);
 
-// AUDIO
-audio.volume = 0.3;
-audio.play();
+intensity += 0.003;
 
-// leggero flicker sicuro (NO filter su video)
+// variazione lenta (quasi impercettibile)
+document.getElementById("fog").style.opacity =
+0.1 + Math.random() * 0.1;
+
+// micro shift visivo globale
+document.body.style.filter =
+`contrast(${1 + Math.sin(Date.now()*0.0002)*0.05})
+brightness(${0.95 + Math.sin(Date.now()*0.0003)*0.03})
+saturate(${0.9 + Math.sin(Date.now()*0.00025)*0.05})`;
+
+}, 200);
+
+/* EVENTI RARI (DISAGIO VERO) */
 setInterval(() => {
-document.getElementById("fx").style.opacity =
-0.2 + Math.random() * 0.2;
-}, 1500);
 
-} catch (e) {
-alert("Camera error: " + e.message);
-console.log(e);
+if (Math.random() > 0.85) {
+
+// glitch breve percepito
+document.body.style.filter = "brightness(1.3) contrast(0.8)";
+
+setTimeout(() => {
+document.body.style.filter = "";
+}, 200);
+
 }
+
+}, 3000);
 
 };
 

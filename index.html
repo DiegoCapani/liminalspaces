@@ -4,24 +4,79 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Liminal Perception</title>
+<title>Liminal VHS Perception</title>
 
 <style>
 body {
 margin: 0;
-background: black;
 overflow: hidden;
+background: black;
 }
 
+/* CAMERA */
 video {
 position: fixed;
 width: 100%;
 height: 100%;
 object-fit: cover;
-transform: scale(1.02);
+
+/* base instabile */
+filter: contrast(1.1) brightness(0.95) saturate(0.7);
 }
 
-/* PERIFERIA INSTABILE */
+/* VHS SCANLINES */
+#scanlines {
+position: fixed;
+width: 100%;
+height: 100%;
+pointer-events: none;
+
+background: repeating-linear-gradient(
+0deg,
+rgba(0,0,0,0.15),
+rgba(0,0,0,0.15) 1px,
+transparent 2px,
+transparent 4px
+);
+
+mix-blend-mode: overlay;
+opacity: 0.4;
+animation: flicker 0.12s infinite;
+}
+
+/* NOISE */
+#noise {
+position: fixed;
+width: 100%;
+height: 100%;
+pointer-events: none;
+
+background-image: url("https://upload.wikimedia.org/wikipedia/commons/5/5c/Image_gaussian_noise_example.png");
+background-size: cover;
+
+mix-blend-mode: overlay;
+opacity: 0.06;
+animation: noiseMove 0.3s infinite;
+}
+
+/* GLOW DISTURBATO */
+#glow {
+position: fixed;
+width: 100%;
+height: 100%;
+pointer-events: none;
+
+background: radial-gradient(
+circle,
+rgba(255,255,220,0.05),
+rgba(0,0,0,0.8)
+);
+
+mix-blend-mode: screen;
+animation: breathe 5s infinite ease-in-out;
+}
+
+/* VIGNETTA */
 #vignette {
 position: fixed;
 width: 100%;
@@ -30,27 +85,30 @@ pointer-events: none;
 
 background: radial-gradient(
 circle,
-rgba(0,0,0,0) 45%,
-rgba(0,0,0,0.75) 100%
+rgba(0,0,0,0) 40%,
+rgba(0,0,0,0.8)
 );
+}
 
-animation: breathe 6s infinite ease-in-out;
+/* ANIMAZIONI */
+@keyframes flicker {
+0% { opacity: 0.35; }
+50% { opacity: 0.45; }
+100% { opacity: 0.3; }
+}
+
+@keyframes noiseMove {
+0% { transform: translate(0,0); }
+25% { transform: translate(-2px,1px); }
+50% { transform: translate(2px,-1px); }
+75% { transform: translate(-1px,-2px); }
+100% { transform: translate(0,0); }
 }
 
 @keyframes breathe {
-0%   { transform: scale(1); opacity: 0.7; }
-50%  { transform: scale(1.03); opacity: 0.85; }
-100% { transform: scale(1); opacity: 0.7; }
-}
-
-/* NEBBIA PSICOLOGICA */
-#fog {
-position: fixed;
-width: 100%;
-height: 100%;
-pointer-events: none;
-background: rgba(255,255,240,0.03);
-mix-blend-mode: overlay;
+0% { opacity: 0.2; transform: scale(1); }
+50% { opacity: 0.35; transform: scale(1.03); }
+100% { opacity: 0.2; transform: scale(1); }
 }
 
 /* START */
@@ -80,7 +138,9 @@ font-size: 18px;
 
 <video id="video" playsinline autoplay muted></video>
 
-<div id="fog"></div>
+<div id="scanlines"></div>
+<div id="noise"></div>
+<div id="glow"></div>
 <div id="vignette"></div>
 
 <audio id="audio" loop>
@@ -112,58 +172,51 @@ audio.currentTime = 0;
 audio.play();
 
 /* =========================
-   DRIFT PERCETTIVO
+   GLITCH RANDOM FRAME
    ========================= */
-
-let driftX = 0;
-let driftY = 0;
 
 setInterval(() => {
 
-// micro movimento impercettibile
-driftX += (Math.random() - 0.5) * 0.002;
-driftY += (Math.random() - 0.5) * 0.002;
+// micro glitch frame shift
+const dx = (Math.random() - 0.5) * 6;
+const dy = (Math.random() - 0.5) * 6;
 
-video.style.transform =
-`translate(${driftX}px, ${driftY}px) scale(1.02)`;
+video.style.transform = `translate(${dx}px, ${dy}px) scale(1.02)`;
 
-}, 50);
+// flicker exposure
+video.style.filter =
+`contrast(${1 + Math.random()*0.2})
+ brightness(${0.9 + Math.random()*0.2})
+ saturate(${0.6 + Math.random()*0.3})`;
+
+}, 120);
 
 /* =========================
-   AUDIO PERCETTIVO
+   AUDIO INSTABILITY
    ========================= */
 
 setInterval(() => {
 
-audio.volume = 0.25 + Math.random() * 0.15;
-audio.playbackRate = 0.95 + Math.random() * 0.1;
+audio.volume = 0.2 + Math.random() * 0.2;
+audio.playbackRate = 0.9 + Math.random() * 0.2;
 
-}, 4000);
+}, 3500);
 
 /* =========================
-   EVENTI RARI (DISAGIO)
+   RANDOM FLASH GLITCH
    ========================= */
 
 setInterval(() => {
 
-if (Math.random() > 0.88) {
+if (Math.random() > 0.9) {
 
-// glitch percettivo breve
-video.style.filter = "contrast(1.3) brightness(1.2)";
+document.body.style.filter = "invert(1) contrast(1.2)";
 
 setTimeout(() => {
-video.style.filter = "none";
-}, 180);
+document.body.style.filter = "none";
+}, 80);
 
 }
-
-}, 2500);
-
-/* NEBBIA DINAMICA */
-setInterval(() => {
-
-document.getElementById("fog").style.opacity =
-0.05 + Math.random() * 0.08;
 
 }, 2000);
 

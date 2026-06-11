@@ -2,221 +2,156 @@
 <html lang="it">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Liminal Space AR</title>
-
-<script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
-<script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
+<title>Liminal AR Filter</title>
 
 <style>
-body{
-margin:0;
-overflow:hidden;
-font-family:Arial,sans-serif;
-background:black;
+body {
+margin: 0;
+overflow: hidden;
+background: black;
+font-family: Arial;
 }
 
-#overlay{
-position:fixed;
-top:0;
-left:0;
-width:100%;
-height:100%;
-display:flex;
-justify-content:center;
-align-items:center;
-background:black;
-z-index:999;
+/* VIDEO CAMERA */
+video {
+position: fixed;
+top: 0;
+left: 0;
+width: 100%;
+height: 100%;
+object-fit: cover;
+transform: scale(1.05);
+filter: contrast(1.2) brightness(0.9) saturate(0.6) hue-rotate(10deg);
 }
 
-#start{
-padding:20px 40px;
-font-size:18px;
-border:none;
-background:white;
-cursor:pointer;
+/* OVERLAY LIMINALE */
+#overlay {
+position: fixed;
+top: 0;
+left: 0;
+width: 100%;
+height: 100%;
+pointer-events: none;
+
+/* effetto inquietante */
+background: radial-gradient(
+circle at center,
+rgba(255,255,240,0.05),
+rgba(0,0,0,0.6)
+);
+
+mix-blend-mode: overlay;
+animation: flicker 6s infinite;
+}
+
+/* VIGNETTA */
+#vignette {
+position: fixed;
+top: 0;
+left: 0;
+width: 100%;
+height: 100%;
+pointer-events: none;
+background: radial-gradient(
+circle,
+transparent 40%,
+rgba(0,0,0,0.7)
+);
+}
+
+/* DISTORSIONE LENTA */
+@keyframes flicker {
+0% { opacity: 0.7; }
+5% { opacity: 0.4; }
+10% { opacity: 0.8; }
+15% { opacity: 0.6; }
+50% { opacity: 0.75; }
+100% { opacity: 0.6; }
+}
+
+/* START SCREEN */
+#startScreen {
+position: fixed;
+width: 100%;
+height: 100%;
+background: black;
+display: flex;
+align-items: center;
+justify-content: center;
+z-index: 10;
+}
+
+button {
+padding: 20px 30px;
+font-size: 18px;
+border: none;
+cursor: pointer;
+background: white;
 }
 </style>
 </head>
 
 <body>
 
-<div id="overlay">
-<button id="start">
-ENTRA
-</button>
+<div id="startScreen">
+<button onclick="start()">ENTRA</button>
 </div>
 
-<audio id="music" loop>
-<source src="liminal.mp3" type="audio/mpeg">
+<video id="video" autoplay playsinline></video>
+
+<div id="overlay"></div>
+<div id="vignette"></div>
+
+<audio id="audio" loop>
+<source src="assets/audio/liminal1.mp3" type="audio/mpeg">
 </audio>
-
-<a-scene
-embedded
-vr-mode-ui="enabled:false"
-renderer="antialias:true; alpha:true"
-arjs="sourceType:webcam; debugUIEnabled:false;">
-
-<a-assets>
-
-<img id="wall"
-src="https://cdn.aframe.io/a-painter/images/floor.jpg">
-
-</a-assets>
-
-<a-entity id="rig" position="0 0 0">
-
-<a-box
-position="0 2 -6"
-width="6"
-height="4"
-depth="0.1"
-material="color:#d7d2c5; opacity:0.8">
-</a-box>
-
-<a-box
-position="-3 2 -3"
-width="0.1"
-height="4"
-depth="6"
-material="color:#d7d2c5; opacity:0.8">
-</a-box>
-
-<a-box
-position="3 2 -3"
-width="0.1"
-height="4"
-depth="6"
-material="color:#d7d2c5; opacity:0.8">
-</a-box>
-
-<a-plane
-position="0 0 -3"
-rotation="-90 0 0"
-width="6"
-height="6"
-material="color:#9b978d">
-</a-plane>
-
-<a-plane
-position="0 4 -3"
-rotation="90 0 0"
-width="6"
-height="6"
-material="color:#f1f1e8">
-</a-plane>
-
-<a-box
-id="lightbox"
-position="0 3.8 -3"
-width="1"
-height="0.1"
-depth="1"
-material="color:white; emissive:white">
-</a-box>
-
-<a-light
-id="light"
-type="point"
-position="0 3.6 -3"
-intensity="2"
-color="#ffffee">
-</a-light>
-
-</a-entity>
-
-<a-entity camera></a-entity>
-
-</a-scene>
 
 <script>
 
-const music=document.getElementById("music");
-const start=document.getElementById("start");
-const overlay=document.getElementById("overlay");
+const video = document.getElementById("video");
+const audio = document.getElementById("audio");
+const startScreen = document.getElementById("startScreen");
 
-start.onclick=()=>{
+function start() {
 
-music.play();
+startScreen.style.display = "none";
 
-overlay.style.display="none";
+// CAMERA
+navigator.mediaDevices.getUserMedia({
+video: { facingMode: "environment" }
+}).then(stream => {
+video.srcObject = stream;
+});
 
-};
-
-const light=document.querySelector("#light");
-
-setInterval(()=>{
-
-let value=1.5+Math.random()*1.5;
-
-light.setAttribute(
-"intensity",
-value
-);
-
-},200);
-
-function createGhostWall(){
-
-const scene=document.querySelector("a-scene");
-
-const wall=document.createElement("a-box");
-
-wall.setAttribute(
-"position",
-`${(Math.random()*8)-4} 2 -${8+Math.random()*10}`
-);
-
-wall.setAttribute("width","3");
-wall.setAttribute("height","4");
-wall.setAttribute("depth","0.05");
-
-wall.setAttribute(
-"material",
-"color:#d8d4ca;opacity:0.25"
-);
-
-scene.appendChild(wall);
-
-setTimeout(()=>{
-wall.remove();
-},4000);
-
-}
-
-setInterval(()=>{
-
-if(Math.random()>0.7){
-
-createGhostWall();
-
-}
-
-},5000);
-
-function randomSoundEffect(){
-
-const audio=new Audio("liminal1.mp3");
-
-audio.volume=0.08;
-
-audio.playbackRate=
-0.7+(Math.random()*0.4);
-
+// AUDIO
+audio.volume = 0.3;
 audio.play();
 
+// micro glitch audio random (disagio)
+setInterval(() => {
+if (Math.random() > 0.7) {
+audio.playbackRate = 0.85 + Math.random() * 0.3;
+audio.volume = 0.2 + Math.random() * 0.2;
 }
+}, 4000);
 
-setInterval(()=>{
+// flicker globale più forte nel tempo
+let intensity = 1;
 
-if(Math.random()>0.85){
+setInterval(() => {
+intensity += 0.01;
 
-randomSoundEffect();
+document.body.style.filter =
+`contrast(${1.2 + Math.random() * 0.2})
+brightness(${0.9 - Math.random() * 0.1})
+saturate(${0.6 - Math.random() * 0.2})
+hue-rotate(${10 + Math.random() * 5}deg)`;
+
+}, 200);
 
 }
-
-},30000);
 
 </script>
 

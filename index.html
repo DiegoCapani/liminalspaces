@@ -4,16 +4,16 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Liminal AR Filter</title>
+<title>Liminal Stable Camera</title>
 
 <style>
 body {
 margin: 0;
-overflow: hidden;
 background: black;
+overflow: hidden;
 }
 
-/* CAMERA */
+/* CAMERA STABILE */
 video {
 position: fixed;
 top: 0;
@@ -21,22 +21,28 @@ left: 0;
 width: 100%;
 height: 100%;
 object-fit: cover;
-transform: scale(1.05);
-filter: contrast(1.2) brightness(0.9) saturate(0.7);
+
+/* IMPORTANTE: evita glitch GPU */
+transform: none;
+filter: none;
+
+background: black;
 }
 
-/* OVERLAY */
-#overlay {
+/* leggero filtro separato (NON sul video) */
+#fx {
 position: fixed;
 top: 0;
 left: 0;
 width: 100%;
 height: 100%;
 pointer-events: none;
-background: radial-gradient(circle, rgba(255,255,240,0.05), rgba(0,0,0,0.7));
+
+background: rgba(255,255,240,0.04);
+mix-blend-mode: overlay;
 }
 
-/* VIGNETTE */
+/* vignetta */
 #vignette {
 position: fixed;
 top: 0;
@@ -44,11 +50,11 @@ left: 0;
 width: 100%;
 height: 100%;
 pointer-events: none;
-background: radial-gradient(circle, transparent 40%, rgba(0,0,0,0.8));
+
+background: radial-gradient(circle, transparent 40%, rgba(0,0,0,0.75));
 }
 
-/* START */
-#startScreen {
+#start {
 position: fixed;
 top: 0;
 left: 0;
@@ -66,86 +72,77 @@ padding: 20px 30px;
 font-size: 18px;
 border: none;
 background: white;
-cursor: pointer;
 }
 </style>
 </head>
 
 <body>
 
-<div id="startScreen">
-<button id="startBtn">ENTRA</button>
+<div id="start">
+<button id="btn">ENTRA</button>
 </div>
 
 <video id="video" playsinline autoplay muted></video>
 
-<div id="overlay"></div>
+<div id="fx"></div>
 <div id="vignette"></div>
 
 <audio id="audio" loop>
-<source src="assets/audio/liminal1.mp3" type="audio/mpeg">
+<source src="assets/audio/liminal.mp3" type="audio/mpeg">
 </audio>
 
 <script>
 
 const video = document.getElementById("video");
-const startBtn = document.getElementById("startBtn");
-const startScreen = document.getElementById("startScreen");
+const btn = document.getElementById("btn");
+const start = document.getElementById("start");
 const audio = document.getElementById("audio");
 
-startBtn.addEventListener("click", async () => {
+let streamRef = null;
+
+btn.onclick = async () => {
 
 try {
 
-startScreen.style.display = "none";
+start.style.display = "none";
 
-// CAMERA (FIX IMPORTANTE)
-const stream = await navigator.mediaDevices.getUserMedia({
+// CAMERA
+streamRef = await navigator.mediaDevices.getUserMedia({
 video: {
 facingMode: { ideal: "environment" }
 },
 audio: false
 });
 
-video.srcObject = stream;
+// IMPORTANTISSIMO: attach stream PRIMA
+video.srcObject = streamRef;
 
-// IMPORTANTISSIMO per iOS
+// forza stabilità playback
 await video.play();
 
-// AUDIO (serve gesto utente)
+// lock stream (trucco anti-black screen)
+setInterval(() => {
+if (video.paused) {
+video.play();
+}
+}, 1000);
+
+// AUDIO
 audio.volume = 0.3;
 audio.play();
 
-startLiminalEffects();
+// leggero flicker sicuro (NO filter su video)
+setInterval(() => {
+document.getElementById("fx").style.opacity =
+0.2 + Math.random() * 0.2;
+}, 1500);
 
-} catch (err) {
-alert("Camera non disponibile: " + err.message);
-console.log(err);
+} catch (e) {
+alert("Camera error: " + e.message);
+console.log(e);
 }
 
-});
-
-function startLiminalEffects() {
-
-// variazione visiva continua
-setInterval(() => {
-
-document.body.style.filter =
-`contrast(${1.2 + Math.random() * 0.2})
-brightness(${0.85 + Math.random() * 0.1})
-saturate(${0.6 + Math.random() * 0.2})`;
-
-}, 3000);
-
-// micro flicker overlay
-setInterval(() => {
-
-document.getElementById("overlay").style.opacity =
-0.4 + Math.random() * 0.4;
-
-}, 2000);
-
-}
+};
 
 </script>
 

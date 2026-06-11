@@ -4,16 +4,19 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 
-<title>Liminal Cardboard VR</title>
+<title>Liminal VR Cardboard</title>
 
 <style>
-body {
+html, body {
 margin: 0;
+padding: 0;
+width: 100%;
+height: 100%;
 overflow: hidden;
 background: black;
 }
 
-/* CONTENITORE VR */
+/* VR LAYOUT */
 #vr {
 position: fixed;
 width: 100%;
@@ -22,7 +25,6 @@ display: flex;
 flex-direction: row;
 }
 
-/* OCCHIO SINISTRO + DESTRO */
 .eye {
 width: 50%;
 height: 100%;
@@ -30,40 +32,43 @@ overflow: hidden;
 position: relative;
 }
 
-/* VIDEO BASE */
+/* CAMERA */
 video {
 position: absolute;
 top: 0;
 left: 0;
-width: 200%;   /* fondamentale per effetto VR */
+width: 200%;
 height: 100%;
 object-fit: cover;
 }
 
-/* leggero offset per profondità falsa */
-#left video {
-transform: translateX(0px);
-}
-
-#right video {
-transform: translateX(-2%);
-}
-
 /* VHS SCANLINES */
-.overlay {
+.scanlines {
 position: fixed;
 width: 100%;
 height: 100%;
 pointer-events: none;
 background: repeating-linear-gradient(
 0deg,
-rgba(0,0,0,0.15),
-rgba(0,0,0,0.15) 1px,
+rgba(0,0,0,0.12),
+rgba(0,0,0,0.12) 1px,
 transparent 2px,
 transparent 4px
 );
 mix-blend-mode: overlay;
-opacity: 0.4;
+opacity: 0.35;
+}
+
+/* NOISE */
+.noise {
+position: fixed;
+width: 100%;
+height: 100%;
+pointer-events: none;
+background: url("https://upload.wikimedia.org/wikipedia/commons/5/5c/Image_gaussian_noise_example.png");
+background-size: cover;
+mix-blend-mode: overlay;
+opacity: 0.05;
 }
 
 /* VIGNETTE */
@@ -72,11 +77,7 @@ position: fixed;
 width: 100%;
 height: 100%;
 pointer-events: none;
-background: radial-gradient(
-circle,
-rgba(0,0,0,0) 40%,
-rgba(0,0,0,0.9)
-);
+background: radial-gradient(circle, rgba(0,0,0,0) 45%, rgba(0,0,0,0.85));
 }
 
 /* START */
@@ -92,8 +93,11 @@ z-index: 10;
 }
 
 button {
-padding: 20px;
+padding: 20px 30px;
 font-size: 18px;
+border: none;
+background: white;
+cursor: pointer;
 }
 </style>
 </head>
@@ -106,17 +110,18 @@ font-size: 18px;
 
 <div id="vr">
 
-<div class="eye" id="left">
+<div class="eye">
 <video id="videoL" playsinline autoplay muted></video>
 </div>
 
-<div class="eye" id="right">
+<div class="eye">
 <video id="videoR" playsinline autoplay muted></video>
 </div>
 
 </div>
 
-<div class="overlay"></div>
+<div class="scanlines"></div>
+<div class="noise"></div>
 <div class="vignette"></div>
 
 <audio id="audio" loop>
@@ -133,16 +138,26 @@ const vR = document.getElementById("videoR");
 
 const audio = document.getElementById("audio");
 
+/* FULLSCREEN */
+async function goFullscreen() {
+const el = document.documentElement;
+
+if (el.requestFullscreen) await el.requestFullscreen();
+else if (el.webkitRequestFullscreen) await el.webkitRequestFullscreen();
+else if (el.msRequestFullscreen) await el.msRequestFullscreen();
+}
+
 btn.onclick = async () => {
+
+await goFullscreen();
 
 start.style.display = "none";
 
 /* CAMERA */
 const stream = await navigator.mediaDevices.getUserMedia({
-video: { facingMode: "environment" }
+video: { facingMode: { ideal: "environment" } }
 });
 
-/* stesso stream per entrambi gli occhi */
 vL.srcObject = stream;
 vR.srcObject = stream;
 
@@ -151,37 +166,55 @@ await vR.play();
 
 /* AUDIO */
 audio.load();
-audio.play();
+audio.currentTime = 0;
+audio.play().catch(e => console.log("audio bloccato", e));
 
 /* =========================
-   INSTABILITÀ PERCETTIVA VR
+   LIMINAL PERCEPTION ENGINE
    ========================= */
 
-let drift = 0;
+let t = 0;
 
 setInterval(() => {
 
-drift += 0.01;
+t += 0.01;
 
-// differenza tra occhi = profondità illusoria
-vL.style.transform = `translateX(${Math.sin(drift) * 2}px)`;
-vR.style.transform = `translateX(${Math.sin(drift + 1) * -2}px)`;
+/* micro drift stereoscopico */
+const drift = Math.sin(t) * 2;
 
-// instabilità globale
-const flicker = 0.9 + Math.random() * 0.2;
+vL.style.transform = `translateX(${drift}px)`;
+vR.style.transform = `translateX(${-drift}px)`;
 
-vL.style.filter = `contrast(${flicker}) brightness(0.95)`;
-vR.style.filter = `contrast(${flicker}) brightness(0.95)`;
+/* instabilità visiva lenta */
+const c = 1 + Math.random() * 0.15;
+
+vL.style.filter = `contrast(${c}) brightness(0.95) saturate(0.8)`;
+vR.style.filter = `contrast(${c}) brightness(0.95) saturate(0.8)`;
 
 }, 80);
+
+/* EVENTI RARI (DISAGIO PERCETTIVO) */
+setInterval(() => {
+
+if (Math.random() > 0.92) {
+
+document.body.style.filter = "invert(1) contrast(1.2)";
+
+setTimeout(() => {
+document.body.style.filter = "none";
+}, 120);
+
+}
+
+}, 2000);
 
 /* AUDIO INSTABILE */
 setInterval(() => {
 
-audio.volume = 0.2 + Math.random() * 0.2;
+audio.volume = 0.15 + Math.random() * 0.25;
 audio.playbackRate = 0.9 + Math.random() * 0.2;
 
-}, 3000);
+}, 3500);
 
 };
 

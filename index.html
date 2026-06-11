@@ -11,10 +11,9 @@ body {
 margin: 0;
 overflow: hidden;
 background: black;
-font-family: Arial;
 }
 
-/* VIDEO CAMERA */
+/* CAMERA */
 video {
 position: fixed;
 top: 0;
@@ -23,10 +22,10 @@ width: 100%;
 height: 100%;
 object-fit: cover;
 transform: scale(1.05);
-filter: contrast(1.2) brightness(0.9) saturate(0.6) hue-rotate(10deg);
+filter: contrast(1.2) brightness(0.9) saturate(0.7);
 }
 
-/* OVERLAY LIMINALE */
+/* OVERLAY */
 #overlay {
 position: fixed;
 top: 0;
@@ -34,19 +33,10 @@ left: 0;
 width: 100%;
 height: 100%;
 pointer-events: none;
-
-/* effetto inquietante */
-background: radial-gradient(
-circle at center,
-rgba(255,255,240,0.05),
-rgba(0,0,0,0.6)
-);
-
-mix-blend-mode: overlay;
-animation: flicker 6s infinite;
+background: radial-gradient(circle, rgba(255,255,240,0.05), rgba(0,0,0,0.7));
 }
 
-/* VIGNETTA */
+/* VIGNETTE */
 #vignette {
 position: fixed;
 top: 0;
@@ -54,32 +44,20 @@ left: 0;
 width: 100%;
 height: 100%;
 pointer-events: none;
-background: radial-gradient(
-circle,
-transparent 40%,
-rgba(0,0,0,0.7)
-);
+background: radial-gradient(circle, transparent 40%, rgba(0,0,0,0.8));
 }
 
-/* DISTORSIONE LENTA */
-@keyframes flicker {
-0% { opacity: 0.7; }
-5% { opacity: 0.4; }
-10% { opacity: 0.8; }
-15% { opacity: 0.6; }
-50% { opacity: 0.75; }
-100% { opacity: 0.6; }
-}
-
-/* START SCREEN */
+/* START */
 #startScreen {
 position: fixed;
+top: 0;
+left: 0;
 width: 100%;
 height: 100%;
-background: black;
 display: flex;
 align-items: center;
 justify-content: center;
+background: black;
 z-index: 10;
 }
 
@@ -87,8 +65,8 @@ button {
 padding: 20px 30px;
 font-size: 18px;
 border: none;
-cursor: pointer;
 background: white;
+cursor: pointer;
 }
 </style>
 </head>
@@ -96,10 +74,10 @@ background: white;
 <body>
 
 <div id="startScreen">
-<button onclick="start()">ENTRA</button>
+<button id="startBtn">ENTRA</button>
 </div>
 
-<video id="video" autoplay playsinline></video>
+<video id="video" playsinline autoplay muted></video>
 
 <div id="overlay"></div>
 <div id="vignette"></div>
@@ -111,45 +89,61 @@ background: white;
 <script>
 
 const video = document.getElementById("video");
-const audio = document.getElementById("audio");
+const startBtn = document.getElementById("startBtn");
 const startScreen = document.getElementById("startScreen");
+const audio = document.getElementById("audio");
 
-function start() {
+startBtn.addEventListener("click", async () => {
+
+try {
 
 startScreen.style.display = "none";
 
-// CAMERA
-navigator.mediaDevices.getUserMedia({
-video: { facingMode: "environment" }
-}).then(stream => {
-video.srcObject = stream;
+// CAMERA (FIX IMPORTANTE)
+const stream = await navigator.mediaDevices.getUserMedia({
+video: {
+facingMode: { ideal: "environment" }
+},
+audio: false
 });
 
-// AUDIO
+video.srcObject = stream;
+
+// IMPORTANTISSIMO per iOS
+await video.play();
+
+// AUDIO (serve gesto utente)
 audio.volume = 0.3;
 audio.play();
 
-// micro glitch audio random (disagio)
-setInterval(() => {
-if (Math.random() > 0.7) {
-audio.playbackRate = 0.85 + Math.random() * 0.3;
-audio.volume = 0.2 + Math.random() * 0.2;
+startLiminalEffects();
+
+} catch (err) {
+alert("Camera non disponibile: " + err.message);
+console.log(err);
 }
-}, 4000);
 
-// flicker globale più forte nel tempo
-let intensity = 1;
+});
 
+function startLiminalEffects() {
+
+// variazione visiva continua
 setInterval(() => {
-intensity += 0.01;
 
 document.body.style.filter =
 `contrast(${1.2 + Math.random() * 0.2})
-brightness(${0.9 - Math.random() * 0.1})
-saturate(${0.6 - Math.random() * 0.2})
-hue-rotate(${10 + Math.random() * 5}deg)`;
+brightness(${0.85 + Math.random() * 0.1})
+saturate(${0.6 + Math.random() * 0.2})`;
 
-}, 200);
+}, 3000);
+
+// micro flicker overlay
+setInterval(() => {
+
+document.getElementById("overlay").style.opacity =
+0.4 + Math.random() * 0.4;
+
+}, 2000);
 
 }
 

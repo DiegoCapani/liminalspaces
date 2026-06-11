@@ -2,9 +2,9 @@
 <html lang="it">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Backrooms Liminal System</title>
+<title>Backrooms Perception</title>
 
 <style>
 html, body {
@@ -23,11 +23,11 @@ width: 100%;
 height: 100%;
 object-fit: cover;
 
-/* tinta backrooms */
-filter:
+/* 🎨 TINTA BACKROOMS */
+filter: 
 sepia(0.35)
-saturate(1.5)
-contrast(1.1)
+saturate(1.6)
+contrast(1.15)
 brightness(0.95)
 hue-rotate(25deg);
 }
@@ -71,7 +71,42 @@ width: 100%;
 height: 100%;
 pointer-events: none;
 
-background: radial-gradient(circle, rgba(0,0,0,0) 40%, rgba(0,0,0,0.85));
+background: radial-gradient(
+circle,
+rgba(0,0,0,0) 40%,
+rgba(0,0,0,0.85)
+);
+}
+
+/* LIGHT FLICKER SIMULATO */
+.flicker {
+position: fixed;
+width: 100%;
+height: 100%;
+pointer-events: none;
+background: rgba(255, 244, 180, 0.04);
+mix-blend-mode: screen;
+animation: flickerAnim 3s infinite;
+}
+
+@keyframes flickerAnim {
+0% { opacity: 0.2; }
+5% { opacity: 0.05; }
+10% { opacity: 0.25; }
+50% { opacity: 0.15; }
+100% { opacity: 0.2; }
+}
+
+/* 📼 VHS TRACKING INTERFERENCE */
+.vhs-line {
+position: fixed;
+left: 0;
+width: 100%;
+height: 2px;
+background: rgba(255,255,255,0.08);
+mix-blend-mode: overlay;
+opacity: 0;
+pointer-events: none;
 }
 
 /* START */
@@ -93,31 +128,6 @@ border: none;
 background: white;
 cursor: pointer;
 }
-
-/* 👻 GHOST */
-#ghost {
-position: fixed;
-top: 50%;
-left: 70%;
-width: 180px;
-height: 320px;
-
-transform: translate(-50%, -50%);
-
-background: radial-gradient(
-ellipse at center,
-rgba(0,0,0,0.45),
-rgba(0,0,0,0)
-);
-
-filter: blur(14px);
-opacity: 0;
-
-mix-blend-mode: multiply;
-pointer-events: none;
-
-transition: opacity 0.2s ease;
-}
 </style>
 </head>
 
@@ -132,8 +142,10 @@ transition: opacity 0.2s ease;
 <div class="scanlines"></div>
 <div class="noise"></div>
 <div class="vignette"></div>
+<div class="flicker"></div>
 
-<div id="ghost"></div>
+<!-- VHS LINE -->
+<div class="vhs-line" id="vhsLine"></div>
 
 <audio id="audio" loop>
 <source src="assets/audio/liminal1.mp3" type="audio/mpeg">
@@ -141,11 +153,12 @@ transition: opacity 0.2s ease;
 
 <script>
 
+const video = document.getElementById("video");
 const btn = document.getElementById("btn");
 const start = document.getElementById("start");
-const video = document.getElementById("video");
 const audio = document.getElementById("audio");
-const ghost = document.getElementById("ghost");
+
+const vhsLine = document.getElementById("vhsLine");
 
 /* FULLSCREEN */
 async function goFullscreen() {
@@ -172,100 +185,101 @@ await video.play();
 
 /* AUDIO */
 audio.load();
-audio.currentTime = 0;
 audio.play().catch(e => console.log("audio bloccato", e));
 
 /* =========================
-   BACKROOMS DRIFT SYSTEM
+   BACKROOMS COLOR SYSTEM
    ========================= */
-
-let t = 0;
 
 setInterval(() => {
 
-t += 0.01;
+const hue = 25 + Math.sin(Date.now() * 0.0003) * 3;
 
-const drift = Math.sin(t) * 1.5;
-
-video.style.transform = `translate(${drift}px, 0px)`;
-
-video.style.filter =
-`
+video.style.filter = `
 sepia(0.35)
-saturate(1.5)
-contrast(${1.05 + Math.random() * 0.08})
-brightness(${0.92 + Math.random() * 0.06})
-hue-rotate(${25 + Math.sin(Date.now() * 0.0003) * 3}deg)
+saturate(1.6)
+contrast(${1.1 + Math.random() * 0.05})
+brightness(${0.92 + Math.random() * 0.05})
+hue-rotate(${hue}deg)
 `;
 
-}, 100);
+}, 120);
 
-/* =========================
-   AUDIO INSTABILITY
-   ========================= */
-
+/* EVENTI RARI */
 setInterval(() => {
 
-audio.volume = 0.15 + Math.random() * 0.25;
-audio.playbackRate = 0.9 + Math.random() * 0.2;
+if (Math.random() > 0.9) {
 
-}, 3500);
+video.style.filter = "brightness(1.4) contrast(0.8) sepia(0.5)";
+
+setTimeout(() => {
+video.style.filter = "";
+}, 150);
+
+}
+
+}, 2500);
+
+/* AUDIO INSTABILE */
+setInterval(() => {
+
+audio.volume = 0.15 + Math.random() * 0.2;
+audio.playbackRate = 0.9 + Math.random() * 0.15;
+
+}, 4000);
 
 /* =========================
-   👻 GHOST RANDOM SYSTEM
+   📼 VHS DISTORTION SYSTEM (B)
    ========================= */
-
-function showGhost() {
-
-const x = 50 + (Math.random() * 40 - 20);
-const y = 50 + (Math.random() * 30 - 15);
-
-ghost.style.left = x + "%";
-ghost.style.top = y + "%";
-
-const intensity = 0.15 + Math.random() * 0.35;
-
-ghost.style.opacity = intensity;
-ghost.style.filter = `blur(${10 + Math.random() * 10}px)`;
 
 let t = 0;
 
-const pulse = setInterval(() => {
+setInterval(() => {
 
-t += 0.1;
+t += 0.02;
 
-ghost.style.opacity =
-intensity * (0.6 + Math.sin(t) * 0.4);
+/* DISTORSIONE VIDEO (warp leggero) */
+const warpX = Math.sin(t) * 2;
+const warpY = Math.cos(t * 0.8) * 1.5;
 
-ghost.style.transform =
-`translate(-50%, -50%) scale(${1 + Math.sin(t) * 0.04})`;
+video.style.transform = `translate(${warpX}px, ${warpY}px) scale(1.01)`;
 
-}, 60);
+}, 50);
 
-setTimeout(() => {
-clearInterval(pulse);
-ghost.style.opacity = 0;
-}, 400 + Math.random() * 1200);
+/* =========================
+   📼 VHS TRACKING LINE
+   ========================= */
 
-}
+function vhsScanline() {
 
-/* RANDOM LOOP NON PREVEDIBILE */
-function ghostLoop() {
-
-const next = 2000 + Math.random() * 6000;
+const delay = 2000 + Math.random() * 5000;
 
 setTimeout(() => {
 
-if (Math.random() > 0.6) {
-showGhost();
+const startY = Math.random() * window.innerHeight;
+
+vhsLine.style.top = startY + "px";
+vhsLine.style.opacity = 0.5;
+
+let drift = 0;
+
+const move = setInterval(() => {
+drift += 8;
+vhsLine.style.top = startY + drift + "px";
+}, 16);
+
+setTimeout(() => {
+clearInterval(move);
+vhsLine.style.opacity = 0;
+}, 700);
+
+vhsScanline();
+
+}, delay);
+
 }
 
-ghostLoop();
-
-}, next);
-}
-
-ghostLoop();
+vhsScanline();
 
 };
 

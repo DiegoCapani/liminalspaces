@@ -2,9 +2,9 @@
 <html lang="it">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 
-<title>Backrooms Perception</title>
+<title>Backrooms Liminal System</title>
 
 <style>
 html, body {
@@ -23,11 +23,11 @@ width: 100%;
 height: 100%;
 object-fit: cover;
 
-/* 🎨 TINTA BACKROOMS */
-filter: 
+/* tinta backrooms */
+filter:
 sepia(0.35)
-saturate(1.6)
-contrast(1.15)
+saturate(1.5)
+contrast(1.1)
 brightness(0.95)
 hue-rotate(25deg);
 }
@@ -71,30 +71,7 @@ width: 100%;
 height: 100%;
 pointer-events: none;
 
-background: radial-gradient(
-circle,
-rgba(0,0,0,0) 40%,
-rgba(0,0,0,0.85)
-);
-}
-
-/* LIGHT FLICKER SIMULATO */
-.flicker {
-position: fixed;
-width: 100%;
-height: 100%;
-pointer-events: none;
-background: rgba(255, 244, 180, 0.04);
-mix-blend-mode: screen;
-animation: flickerAnim 3s infinite;
-}
-
-@keyframes flickerAnim {
-0% { opacity: 0.2; }
-5% { opacity: 0.05; }
-10% { opacity: 0.25; }
-50% { opacity: 0.15; }
-100% { opacity: 0.2; }
+background: radial-gradient(circle, rgba(0,0,0,0) 40%, rgba(0,0,0,0.85));
 }
 
 /* START */
@@ -116,6 +93,31 @@ border: none;
 background: white;
 cursor: pointer;
 }
+
+/* 👻 GHOST */
+#ghost {
+position: fixed;
+top: 50%;
+left: 70%;
+width: 180px;
+height: 320px;
+
+transform: translate(-50%, -50%);
+
+background: radial-gradient(
+ellipse at center,
+rgba(0,0,0,0.45),
+rgba(0,0,0,0)
+);
+
+filter: blur(14px);
+opacity: 0;
+
+mix-blend-mode: multiply;
+pointer-events: none;
+
+transition: opacity 0.2s ease;
+}
 </style>
 </head>
 
@@ -130,7 +132,8 @@ cursor: pointer;
 <div class="scanlines"></div>
 <div class="noise"></div>
 <div class="vignette"></div>
-<div class="flicker"></div>
+
+<div id="ghost"></div>
 
 <audio id="audio" loop>
 <source src="assets/audio/liminal1.mp3" type="audio/mpeg">
@@ -138,10 +141,11 @@ cursor: pointer;
 
 <script>
 
-const video = document.getElementById("video");
 const btn = document.getElementById("btn");
 const start = document.getElementById("start");
+const video = document.getElementById("video");
 const audio = document.getElementById("audio");
+const ghost = document.getElementById("ghost");
 
 /* FULLSCREEN */
 async function goFullscreen() {
@@ -168,49 +172,100 @@ await video.play();
 
 /* AUDIO */
 audio.load();
+audio.currentTime = 0;
 audio.play().catch(e => console.log("audio bloccato", e));
 
 /* =========================
-   LIMINAL SYSTEM BACKROOMS
+   BACKROOMS DRIFT SYSTEM
+   ========================= */
+
+let t = 0;
+
+setInterval(() => {
+
+t += 0.01;
+
+const drift = Math.sin(t) * 1.5;
+
+video.style.transform = `translate(${drift}px, 0px)`;
+
+video.style.filter =
+`
+sepia(0.35)
+saturate(1.5)
+contrast(${1.05 + Math.random() * 0.08})
+brightness(${0.92 + Math.random() * 0.06})
+hue-rotate(${25 + Math.sin(Date.now() * 0.0003) * 3}deg)
+`;
+
+}, 100);
+
+/* =========================
+   AUDIO INSTABILITY
    ========================= */
 
 setInterval(() => {
 
-/* micro instabilità colore */
-const hue = 25 + Math.sin(Date.now() * 0.0003) * 3;
+audio.volume = 0.15 + Math.random() * 0.25;
+audio.playbackRate = 0.9 + Math.random() * 0.2;
 
-video.style.filter = `
-sepia(0.35)
-saturate(1.6)
-contrast(${1.1 + Math.random() * 0.05})
-brightness(${0.92 + Math.random() * 0.05})
-hue-rotate(${hue}deg)
-`;
+}, 3500);
 
-}, 120);
+/* =========================
+   👻 GHOST RANDOM SYSTEM
+   ========================= */
 
-/* EVENTI RARI */
-setInterval(() => {
+function showGhost() {
 
-if (Math.random() > 0.9) {
+const x = 50 + (Math.random() * 40 - 20);
+const y = 50 + (Math.random() * 30 - 15);
 
-video.style.filter = "brightness(1.4) contrast(0.8) sepia(0.5)";
+ghost.style.left = x + "%";
+ghost.style.top = y + "%";
+
+const intensity = 0.15 + Math.random() * 0.35;
+
+ghost.style.opacity = intensity;
+ghost.style.filter = `blur(${10 + Math.random() * 10}px)`;
+
+let t = 0;
+
+const pulse = setInterval(() => {
+
+t += 0.1;
+
+ghost.style.opacity =
+intensity * (0.6 + Math.sin(t) * 0.4);
+
+ghost.style.transform =
+`translate(-50%, -50%) scale(${1 + Math.sin(t) * 0.04})`;
+
+}, 60);
 
 setTimeout(() => {
-video.style.filter = "";
-}, 150);
+clearInterval(pulse);
+ghost.style.opacity = 0;
+}, 400 + Math.random() * 1200);
 
 }
 
-}, 2500);
+/* RANDOM LOOP NON PREVEDIBILE */
+function ghostLoop() {
 
-/* AUDIO INSTABILE */
-setInterval(() => {
+const next = 2000 + Math.random() * 6000;
 
-audio.volume = 0.15 + Math.random() * 0.2;
-audio.playbackRate = 0.9 + Math.random() * 0.15;
+setTimeout(() => {
 
-}, 4000);
+if (Math.random() > 0.6) {
+showGhost();
+}
+
+ghostLoop();
+
+}, next);
+}
+
+ghostLoop();
 
 };
 

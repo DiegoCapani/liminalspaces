@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+
+<title>Liminal Cardboard VR</title>
+
+<style>
+body {
+margin: 0;
+overflow: hidden;
+background: black;
+}
+
+/* CONTENITORE VR */
+#vr {
+position: fixed;
+width: 100%;
+height: 100%;
+display: flex;
+flex-direction: row;
+}
+
+/* OCCHIO SINISTRO + DESTRO */
+.eye {
+width: 50%;
+height: 100%;
+overflow: hidden;
+position: relative;
+}
+
+/* VIDEO BASE */
+video {
+position: absolute;
+top: 0;
+left: 0;
+width: 200%;   /* fondamentale per effetto VR */
+height: 100%;
+object-fit: cover;
+}
+
+/* leggero offset per profondità falsa */
+#left video {
+transform: translateX(0px);
+}
+
+#right video {
+transform: translateX(-2%);
+}
+
+/* VHS SCANLINES */
+.overlay {
+position: fixed;
+width: 100%;
+height: 100%;
+pointer-events: none;
+background: repeating-linear-gradient(
+0deg,
+rgba(0,0,0,0.15),
+rgba(0,0,0,0.15) 1px,
+transparent 2px,
+transparent 4px
+);
+mix-blend-mode: overlay;
+opacity: 0.4;
+}
+
+/* VIGNETTE */
+.vignette {
+position: fixed;
+width: 100%;
+height: 100%;
+pointer-events: none;
+background: radial-gradient(
+circle,
+rgba(0,0,0,0) 40%,
+rgba(0,0,0,0.9)
+);
+}
+
+/* START */
+#start {
+position: fixed;
+width: 100%;
+height: 100%;
+display: flex;
+align-items: center;
+justify-content: center;
+background: black;
+z-index: 10;
+}
+
+button {
+padding: 20px;
+font-size: 18px;
+}
+</style>
+</head>
+
+<body>
+
+<div id="start">
+<button id="btn">ENTRA IN VR</button>
+</div>
+
+<div id="vr">
+
+<div class="eye" id="left">
+<video id="videoL" playsinline autoplay muted></video>
+</div>
+
+<div class="eye" id="right">
+<video id="videoR" playsinline autoplay muted></video>
+</div>
+
+</div>
+
+<div class="overlay"></div>
+<div class="vignette"></div>
+
+<audio id="audio" loop>
+<source src="assets/audio/liminal1.mp3" type="audio/mpeg">
+</audio>
+
+<script>
+
+const btn = document.getElementById("btn");
+const start = document.getElementById("start");
+
+const vL = document.getElementById("videoL");
+const vR = document.getElementById("videoR");
+
+const audio = document.getElementById("audio");
+
+btn.onclick = async () => {
+
+start.style.display = "none";
+
+/* CAMERA */
+const stream = await navigator.mediaDevices.getUserMedia({
+video: { facingMode: "environment" }
+});
+
+/* stesso stream per entrambi gli occhi */
+vL.srcObject = stream;
+vR.srcObject = stream;
+
+await vL.play();
+await vR.play();
+
+/* AUDIO */
+audio.load();
+audio.play();
+
+/* =========================
+   INSTABILITÀ PERCETTIVA VR
+   ========================= */
+
+let drift = 0;
+
+setInterval(() => {
+
+drift += 0.01;
+
+// differenza tra occhi = profondità illusoria
+vL.style.transform = `translateX(${Math.sin(drift) * 2}px)`;
+vR.style.transform = `translateX(${Math.sin(drift + 1) * -2}px)`;
+
+// instabilità globale
+const flicker = 0.9 + Math.random() * 0.2;
+
+vL.style.filter = `contrast(${flicker}) brightness(0.95)`;
+vR.style.filter = `contrast(${flicker}) brightness(0.95)`;
+
+}, 80);
+
+/* AUDIO INSTABILE */
+setInterval(() => {
+
+audio.volume = 0.2 + Math.random() * 0.2;
+audio.playbackRate = 0.9 + Math.random() * 0.2;
+
+}, 3000);
+
+};
+
+</script>
+
+</body>
+</html>
